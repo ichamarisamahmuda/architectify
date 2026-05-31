@@ -14,3 +14,14 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## Environment variables (Firebase & Cloudinary)
+
+Copy the example env file and fill your credentials before running the app locally:
+
+```
+cp .env.local.example .env.local
+# then edit .env.local and fill the VITE_FIREBASE_* and VITE_CLOUDINARY_* values
+```
+
+Do not commit your `.env.local` to source control. The project includes a fallback Firebase configuration for convenience, but you should set your own credentials for testing and production.

@@ -5,15 +5,16 @@ import Button from '../../../components/common/Button/Button.jsx'
 import Input from '../../../components/common/Input/Input.jsx'
 import PasswordInput from '../../../components/auth/PasswordInput/PasswordInput.jsx'
 import AuthTabs from '../../../components/auth/AuthTabs/AuthTabs.jsx'
+import { useAuth } from '../../../hooks/useAuth.js'
 
 const roles = [
   {
-    key: 'client',
+    key: 'Client',
     label: 'Client',
     icon: Home,
   },
   {
-    key: 'architect',
+    key: 'Architect',
     label: 'Architect',
     icon: DraftingCompass,
   },
@@ -21,24 +22,66 @@ const roles = [
 
 function RegisterForm() {
   const navigate = useNavigate()
+  const { register } = useAuth()
   const [formData, setFormData] = useState({
-    role: 'client',
-    name: '',
+    role: 'Client',
+    fullName: '',
     email: '',
     phone: '',
     password: '',
     confirmPassword: '',
     agree: false,
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target
     setFormData((current) => ({ ...current, [name]: type === 'checkbox' ? checked : value }))
+    if (error) {
+      setError('')
+    }
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    navigate('/home')
+
+    if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
+      setError('Lengkapi seluruh field yang wajib diisi.')
+      return
+    }
+
+    if (!formData.agree) {
+      setError('Silakan setujui Terms & Conditions dan Privacy Policy.')
+      return
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Password dan confirm password tidak sama.')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    try {
+      await register({
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+        phoneNumber: formData.phone,
+      })
+
+      navigate('/login', {
+        replace: true,
+        state: { message: 'Akun berhasil dibuat' },
+      })
+    } catch (registerError) {
+      setError(registerError?.message || 'Gagal membuat akun. Silakan coba lagi.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -92,11 +135,11 @@ function RegisterForm() {
 
         <Input
           label="Full Name"
-          name="name"
+          name="fullName"
           type="text"
           placeholder="John Doe"
           autoComplete="name"
-          value={formData.name}
+          value={formData.fullName}
           onChange={handleChange}
         />
         <Input
@@ -154,8 +197,14 @@ function RegisterForm() {
           </span>
         </label>
 
+        {error ? (
+          <div className="rounded-2xl border border-[#F3C4C4] bg-[#FFF4F4] px-4 py-3 text-sm font-medium text-[#C43D3D]">
+            {error}
+          </div>
+        ) : null}
+
         <Button type="submit" className="h-14 w-full rounded-[20px] text-base">
-          Create Account
+          {loading ? 'Creating...' : 'Create Account'}
         </Button>
       </form>
     </div>
