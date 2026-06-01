@@ -5,7 +5,9 @@ import ChatComposerNav from '../components/chat/ChatComposerNav/ChatComposerNav.
 function MainLayout() {
   const location = useLocation()
   const isChatRoom = location.pathname.startsWith('/chat/') && location.pathname !== '/chat'
-  const isArchitectDetail = location.pathname.startsWith('/search/architect/')
+  const isArchitectDetail = (location.pathname.startsWith('/architect/') || location.pathname.startsWith('/search/architect/'))
+    && !location.pathname.startsWith('/architect/profile')
+    && !location.pathname.startsWith('/architect/portfolio')
   const isBookingConsultation = location.pathname.startsWith('/bookings/consultation/')
   const isOrderForm = location.pathname.startsWith('/bookings/order-form/')
   const isPaymentConfirmation = location.pathname.startsWith('/bookings/payment/')

@@ -6,19 +6,47 @@ import Input from '../../../components/common/Input/Input.jsx'
 import PasswordInput from '../../../components/auth/PasswordInput/PasswordInput.jsx'
 import SocialLogin from '../../../components/auth/SocialLogin/SocialLogin.jsx'
 import AuthTabs from '../../../components/auth/AuthTabs/AuthTabs.jsx'
+import { useAuth } from '../../../hooks/useAuth.js'
 
-function LoginForm() {
+function LoginForm({ successMessage = '' }) {
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [formData, setFormData] = useState({ email: '', password: '' })
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState(successMessage)
+  const [loading, setLoading] = useState(false)
 
   const handleChange = (event) => {
     const { name, value } = event.target
     setFormData((current) => ({ ...current, [name]: value }))
+    if (error) {
+      setError('')
+    }
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    navigate('/home')
+    setError('')
+    setNotice('')
+
+    if (!formData.email || !formData.password) {
+      setError('Email dan password wajib diisi.')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      await login({
+        email: formData.email,
+        password: formData.password,
+      })
+      navigate('/home', { replace: true })
+    } catch (loginError) {
+      setError(loginError?.message || 'Gagal masuk. Silakan cek email dan password.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -32,6 +60,18 @@ function LoginForm() {
         </h1>
         <p className="mt-3 text-[17px] text-[#7B8FAB]">Sign in to continue</p>
       </div>
+
+      {notice ? (
+        <div className="rounded-2xl border border-[#CFE6D5] bg-[#EFFAF1] px-4 py-3 text-sm font-medium text-[#2D7A49]">
+          {notice}
+        </div>
+      ) : null}
+
+      {error ? (
+        <div className="rounded-2xl border border-[#F3C4C4] bg-[#FFF4F4] px-4 py-3 text-sm font-medium text-[#C43D3D]">
+          {error}
+        </div>
+      ) : null}
 
       <AuthTabs />
 
@@ -63,7 +103,7 @@ function LoginForm() {
         </div>
 
         <Button type="submit" className="h-14 w-full rounded-[22px] text-base">
-          Sign In
+          {loading ? 'Signing In...' : 'Sign In'}
         </Button>
       </form>
 

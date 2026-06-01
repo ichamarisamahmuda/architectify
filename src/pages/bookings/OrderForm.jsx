@@ -1,23 +1,17 @@
 import { ArrowLeft, Upload, Trash2 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Button from '../../components/common/Button/Button.jsx'
-
-const architectProfiles = {
-  'andi-prasetyo': {
-    name: 'Andi Prasetyo, S.ArS',
-    tags: ['Residential', 'Minimalist'],
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80',
-    consultationPrice: 500000,
-  },
-}
+import { getArchitectById } from '../../services/architectService.js'
 
 const projectTypes = ['Residential', 'Commercial', 'Hospitality', 'Educational', 'Healthcare', 'Industrial']
 
 export default function OrderForm() {
   const navigate = useNavigate()
   const { slug } = useParams()
-  const architect = architectProfiles[slug] || architectProfiles['andi-prasetyo']
+  const [architect, setArchitect] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   const [formData, setFormData] = useState({
     projectName: '',
@@ -32,6 +26,41 @@ export default function OrderForm() {
 
   const [moodboards, setMoodboards] = useState([])
   const [fileInputKey, setFileInputKey] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadArchitect = async () => {
+      setLoading(true)
+      setError('')
+
+      try {
+        const result = await getArchitectById(slug)
+        if (!cancelled) {
+          setArchitect(result)
+          if (!result) {
+            setError('Data architect tidak ditemukan.')
+          }
+        }
+      } catch (loadError) {
+        console.error(loadError)
+        if (!cancelled) {
+          setError('Gagal mengambil data architect.')
+          setArchitect(null)
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    loadArchitect()
+
+    return () => {
+      cancelled = true
+    }
+  }, [slug])
 
   const handleBack = () => {
     navigate(-1)
@@ -72,7 +101,7 @@ export default function OrderForm() {
 
   const handleSubmit = () => {
     console.log({
-      architect: architect.name,
+      architect: architect?.fullName,
       ...formData,
       moodboards: moodboards.map((m) => ({ name: m.name, size: m.size })),
     })
@@ -100,17 +129,23 @@ export default function OrderForm() {
 
       {/* Architect Info */}
       <div className="border-b border-white/70 px-4 py-4 bg-[#F9F6F2]">
-        <div className="flex items-center gap-3">
-          <img
-            src={architect.avatar}
-            alt={architect.name}
-            className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md"
-          />
-          <div>
-            <h2 className="font-semibold text-[15px] text-[#1A2340]">{architect.name}</h2>
-            <p className="text-[12px] text-[#8A96AA]">{architect.tags.join(' • ')}</p>
+        {loading ? (
+          <p className="text-[13px] text-[#7B8FAB]">Loading architect...</p>
+        ) : error ? (
+          <p className="text-[13px] text-[#C43D3D]">{error}</p>
+        ) : architect ? (
+          <div className="flex items-center gap-3">
+            <img
+              src={architect.profilePhoto || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=80'}
+              alt={architect.fullName}
+              className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md"
+            />
+            <div>
+              <h2 className="font-semibold text-[15px] text-[#1A2340]">{architect.fullName}</h2>
+              <p className="text-[12px] text-[#8A96AA]">{Array.isArray(architect.specialization) ? architect.specialization.join(' • ') : ''}</p>
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
 
       {/* Content - Scrollable */}
