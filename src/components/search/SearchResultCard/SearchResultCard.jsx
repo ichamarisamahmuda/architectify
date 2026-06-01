@@ -46,7 +46,7 @@ function SearchResultCard({ architect }) {
           <p className="mt-2 text-[13px] text-[#7B8FAB]">{consultationPrice}</p>
 
           <Link
-            to={`/architect/${architect?.uid || architect?.id}`}
+            to={`/architect/${architect?.uid}`}
             className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-[18px] border-2 border-[#1B2F5E] text-[14px] font-semibold text-[#1B2F5E] transition hover:bg-[#F4F7FC]"
           >
             View Profile
