@@ -1,7 +1,8 @@
-function FilterButton({ active = false, children }) {
+function FilterButton({ active = false, children, onClick }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className={[
         'whitespace-nowrap rounded-full px-4 py-2.5 text-[15px] font-medium transition duration-300',
         active

@@ -6,39 +6,42 @@ import Input from '../../../components/common/Input/Input.jsx'
 import Button from '../../../components/common/Button/Button.jsx'
 import Navbar from '../../../components/common/Navbar/Navbar.jsx'
 import { useAuth } from '../../../hooks/useAuth.js'
+import { updateAuthEmail } from '../../../services/authService.js'
 import { uploadToCloudinary } from '../../../services/cloudinaryService.js'
-import { updateUserDocument } from '../../../services/userService.js'
 import { updateArchitectDocument } from '../../../services/architectService.js'
+import { updateUserDocument } from '../../../services/userService.js'
 
 function EditProfile() {
   const navigate = useNavigate()
-  const { user, refreshSession } = useAuth()
-  return <EditProfileForm key={user?.uid ?? 'guest'} user={user} navigate={navigate} refreshSession={refreshSession} />
+  const { user, architectProfile, refreshSession } = useAuth()
+  return (
+    <EditProfileForm
+      key={user?.uid ?? 'guest'}
+      user={user}
+      architectProfile={architectProfile}
+      navigate={navigate}
+      refreshSession={refreshSession}
+    />
+  )
 }
 
-function createInitialFormData(user) {
+function createInitialFormData(user, architectProfile) {
   return {
     fullName: user?.fullName ?? '',
-    location: user?.location ?? user?.architectProfile?.location ?? '',
+    email: user?.email ?? '',
+    location: user?.location ?? architectProfile?.location ?? '',
     phoneNumber: user?.phoneNumber ?? '',
-    aboutMe: user?.description ?? user?.architectProfile?.description ?? '',
-    consultationPrice: user?.architectProfile?.consultationPrice ?? '',
-    specialization: Array.isArray(user?.architectProfile?.specialization)
-      ? user.architectProfile.specialization.join(', ')
-      : '',
   }
 }
 
-function EditProfileForm({ user, navigate, refreshSession }) {
-  const [formData, setFormData] = useState(() => createInitialFormData(user))
+function EditProfileForm({ user, architectProfile, navigate, refreshSession }) {
+  const [formData, setFormData] = useState(() => createInitialFormData(user, architectProfile))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
 
   const fileInputRef = useRef(null)
-  const portfolioInputRef = useRef(null)
-  const [profilePhotoPreview, setProfilePhotoPreview] = useState(user?.profilePhoto || user?.architectProfile?.profilePhoto || '')
-  const [portfolioPreviews, setPortfolioPreviews] = useState(Array.isArray(user?.architectProfile?.portfolio) ? user.architectProfile.portfolio : (Array.isArray(user?.portfolio) ? user.portfolio : []))
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState(user?.profilePhoto || architectProfile?.profilePhoto || '')
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -56,18 +59,6 @@ function EditProfileForm({ user, navigate, refreshSession }) {
     setFormData((current) => ({ ...current, _profileFile: file }))
   }
 
-  const handleChoosePortfolio = () => {
-    portfolioInputRef.current?.click()
-  }
-
-  const handlePortfolioFiles = (e) => {
-    const files = Array.from(e.target.files || [])
-    if (!files.length) return
-    const previews = files.map((f) => ({ url: URL.createObjectURL(f), name: f.name }))
-    setPortfolioPreviews((current) => [...current, ...previews])
-    setFormData((current) => ({ ...current, _portfolioFiles: [...(current._portfolioFiles || []), ...files] }))
-  }
-
   const handleSubmit = async (event) => {
     event.preventDefault()
     setError('')
@@ -77,7 +68,7 @@ function EditProfileForm({ user, navigate, refreshSession }) {
 
     try {
       // Upload profile photo if provided (skip if Cloudinary not configured)
-      let profilePhotoUrl = user?.profilePhoto || user?.architectProfile?.profilePhoto || ''
+      let profilePhotoUrl = user?.profilePhoto || architectProfile?.profilePhoto || ''
       if (formData._profileFile) {
         try {
           const res = await uploadToCloudinary(formData._profileFile, { resourceType: 'image' })
@@ -92,58 +83,25 @@ function EditProfileForm({ user, navigate, refreshSession }) {
         }
       }
 
+      await updateAuthEmail(formData.email)
+
+      await updateUserDocument(user.uid, {
+        fullName: formData.fullName,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        profilePhoto: profilePhotoUrl,
+        location: formData.location,
+        profileCompleted: true,
+      })
+
       if (user.role === 'Architect') {
-        // Upload portfolio files if any
-        const existingPortfolio = Array.isArray(user.architectProfile?.portfolio) ? user.architectProfile.portfolio : []
-        const newPortfolio = []
-        if (formData._portfolioFiles && formData._portfolioFiles.length > 0) {
-          try {
-            const uploads = await Promise.all(
-              formData._portfolioFiles.map((file) => uploadToCloudinary(file, { resourceType: 'auto' }))
-            )
-            uploads.forEach((u) => newPortfolio.push(u.secureUrl))
-          } catch (uploadErr) {
-            if (uploadErr?.message && uploadErr.message.toLowerCase().includes('cloudinary')) {
-              setNotice((prev) => prev ? prev + ' Portfolio tidak diupload.' : 'Cloudinary belum dikonfigurasi. Portfolio tidak diupload.')
-            } else {
-              throw uploadErr
-            }
-          }
-        }
-
-        const specializationArr = formData.specialization ? formData.specialization.split(',').map((s) => s.trim()).filter(Boolean) : []
-
         await updateArchitectDocument(user.uid, {
+          uid: user.uid,
           fullName: formData.fullName,
-          email: user.email,
+          email: formData.email,
           profilePhoto: profilePhotoUrl,
           location: formData.location,
-          consultationPrice: formData.consultationPrice,
-          specialization: specializationArr,
-          portfolio: [...existingPortfolio, ...newPortfolio],
-          description: formData.aboutMe,
         })
-
-        // Also update basic user doc
-        await updateUserDocument(user.uid, {
-          fullName: formData.fullName,
-          phoneNumber: formData.phoneNumber,
-          location: formData.location,
-          profileCompleted: true,
-        })
-      } else {
-        // Client
-        await updateUserDocument(user.uid, {
-          fullName: formData.fullName,
-          phoneNumber: formData.phoneNumber,
-          location: formData.location,
-          description: formData.aboutMe,
-          profileCompleted: true,
-        })
-        // Optionally upload profile photo for client and save URL on user doc
-        if (profilePhotoUrl) {
-          await updateUserDocument(user.uid, { profilePhoto: profilePhotoUrl })
-        }
       }
 
       // refresh context session so Profile reflects latest Firestore data
@@ -165,8 +123,6 @@ function EditProfileForm({ user, navigate, refreshSession }) {
       setLoading(false)
     }
   }
-
-  const isArchitect = user?.role === 'Architect'
 
   if (!user) {
     return null
@@ -202,14 +158,8 @@ function EditProfileForm({ user, navigate, refreshSession }) {
                 <button type="button" onClick={handleChooseProfilePhoto} className="text-sm font-semibold text-[#1B78D6]">
                   Upload Foto
                 </button>
-                {user?.role === 'Architect' ? (
-                  <button type="button" onClick={handleChoosePortfolio} className="text-sm font-semibold text-[#1B78D6]">
-                    Upload Portfolio
-                  </button>
-                ) : null}
               </div>
               <input ref={fileInputRef} onChange={handleProfileFile} type="file" accept="image/*" className="hidden" />
-              <input ref={portfolioInputRef} onChange={handlePortfolioFiles} type="file" accept="image/*,application/pdf" multiple className="hidden" />
             </div>
 
             <Input
@@ -217,6 +167,13 @@ function EditProfileForm({ user, navigate, refreshSession }) {
               name="fullName"
               type="text"
               value={formData.fullName}
+              onChange={handleChange}
+            />
+            <Input
+              label="Email"
+              name="email"
+              type="email"
+              value={formData.email}
               onChange={handleChange}
             />
             <Input
@@ -233,45 +190,6 @@ function EditProfileForm({ user, navigate, refreshSession }) {
               value={formData.phoneNumber}
               onChange={handleChange}
             />
-            <Input
-              label="About Me"
-              name="aboutMe"
-              type="text"
-              value={formData.aboutMe}
-              onChange={handleChange}
-            />
-
-            {isArchitect ? (
-              <>
-                <Input
-                  label="Consultation Price"
-                  name="consultationPrice"
-                  type="text"
-                  value={formData.consultationPrice}
-                  onChange={handleChange}
-                />
-                <Input
-                  label="Specialization"
-                  name="specialization"
-                  type="text"
-                  value={formData.specialization}
-                  onChange={handleChange}
-                />
-              </>
-            ) : null}
-
-            {portfolioPreviews && portfolioPreviews.length > 0 ? (
-              <div className="space-y-2">
-                <p className="text-sm font-semibold text-[#1B2F5E]">Portfolio</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {portfolioPreviews.map((p, idx) => (
-                    <div key={idx} className="h-20 w-full overflow-hidden rounded-md bg-white">
-                      <img src={p.url || p} alt={p.name || `portfolio-${idx}`} className="h-full w-full object-cover" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
 
             {error ? (
               <div className="rounded-2xl border border-[#F3C4C4] bg-[#FFF4F4] px-4 py-3 text-sm font-medium text-[#C43D3D]">

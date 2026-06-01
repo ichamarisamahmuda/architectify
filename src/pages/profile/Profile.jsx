@@ -33,6 +33,7 @@ function Profile() {
   const { user, architectProfile, logout } = useAuth()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [logoutError, setLogoutError] = useState('')
+  const isArchitect = user?.role === 'Architect'
 
   const handleLogout = async () => {
     setLogoutError('')
@@ -101,72 +102,41 @@ function Profile() {
           </div>
         </Card>
 
-        <div className="grid grid-cols-3 gap-3">
-          <Stat value={12} label="Projects" />
-          <Stat value={8} label="Architects" />
-          <Stat value={24} label="Reviews" />
-        </div>
         <div className="space-y-3">
-          <Card className="p-0">
-            <Link to="/profile/settings" className="flex items-center justify-between gap-3 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-[#F3F7FA] p-3">
-                  <ChevronRight className="h-4 w-4 text-[#6A84A6] rotate-180" />
-                </div>
-                <div>
-                  <p className="text-[16px] font-medium text-[#1A2340]">Account Settings</p>
-                  <p className="mt-0.5 text-[12px] text-[#8BA0BC]">Manage your account preferences</p>
-                </div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-[#C9D4E6]" />
-            </Link>
-          </Card>
+          {isArchitect ? (
+            <>
+              <Card className="p-0">
+                <Link to="/architect/profile" className="flex items-center justify-between gap-3 px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-full bg-[#F3F7FA] p-3">
+                      <ChevronRight className="h-4 w-4 text-[#6A84A6] rotate-180" />
+                    </div>
+                    <div>
+                      <p className="text-[16px] font-medium text-[#1A2340]">Professional Settings</p>
+                      <p className="mt-0.5 text-[12px] text-[#8BA0BC]">Manage your professional profile</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-[#C9D4E6]" />
+                </Link>
+              </Card>
 
-          <Card className="p-0">
-            <Link to="/profile/notifications" className="flex items-center justify-between gap-3 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-[#F3F7FA] p-3">
-                  <ChevronRight className="h-4 w-4 text-[#6A84A6] rotate-180" />
-                </div>
-                <div>
-                  <p className="text-[16px] font-medium text-[#1A2340]">Notifications</p>
-                  <p className="mt-0.5 text-[12px] text-[#8BA0BC]">Push notifications and email alerts</p>
-                </div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-[#C9D4E6]" />
-            </Link>
-          </Card>
-
-          <Card className="p-0">
-            <Link to="/profile/saved" className="flex items-center justify-between gap-3 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-[#F3F7FA] p-3">
-                  <ChevronRight className="h-4 w-4 text-[#6A84A6] rotate-180" />
-                </div>
-                <div>
-                  <p className="text-[16px] font-medium text-[#1A2340]">Saved Architects</p>
-                  <p className="mt-0.5 text-[12px] text-[#8BA0BC]">View your favorite architects</p>
-                </div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-[#C9D4E6]" />
-            </Link>
-          </Card>
-
-          <Card className="p-0">
-            <Link to="/profile/help" className="flex items-center justify-between gap-3 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-[#F3F7FA] p-3">
-                  <ChevronRight className="h-4 w-4 text-[#6A84A6] rotate-180" />
-                </div>
-                <div>
-                  <p className="text-[16px] font-medium text-[#1A2340]">Help & Support</p>
-                  <p className="mt-0.5 text-[12px] text-[#8BA0BC]">FAQs and customer support</p>
-                </div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-[#C9D4E6]" />
-            </Link>
-          </Card>
-
+              <Card className="p-0">
+                <Link to="/architect/portfolio" className="flex items-center justify-between gap-3 px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-full bg-[#F3F7FA] p-3">
+                      <ChevronRight className="h-4 w-4 text-[#6A84A6] rotate-180" />
+                    </div>
+                    <div>
+                      <p className="text-[16px] font-medium text-[#1A2340]">Manage Portfolio</p>
+                      <p className="mt-0.5 text-[12px] text-[#8BA0BC]">Update your professional portfolio</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-[#C9D4E6]" />
+                </Link>
+              </Card>
+            </>
+          ) : null}
+         
           <div>
             {logoutError ? (
               <p className="mb-2 rounded-xl border border-[#F3C4C4] bg-[#FFF4F4] px-3 py-2 text-sm font-medium text-[#C43D3D]">

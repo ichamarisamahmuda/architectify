@@ -1,74 +1,17 @@
-import { ArrowLeft, CheckCircle2, ChevronRight, MapPin, Star } from 'lucide-react'
+import { ArrowLeft, Briefcase, CalendarDays, CheckCircle2, ChevronRight, MapPin, Star } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Card from '../../components/common/Card/Card.jsx'
 import Button from '../../components/common/Button/Button.jsx'
+import { getArchitectById } from '../../services/architectService.js'
+import { subscribeArchitectPortfolios } from '../../services/portfolioService.js'
 
-const architectProfiles = {
-  'andi-prasetyo': {
-    name: 'Andi Prasetyo, S.ArS',
-    role: 'Residential Architect',
-    location: 'Jakarta, Indonesia',
-    rating: 4.9,
-    reviewCount: '128 reviews',
-    heroImage: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1200&q=80',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80',
-    tags: ['Residential', 'Minimalist', 'Sustainable'],
-    about: 'Experienced architect specializing in residential minimalist and sustainable design. Passionate about creating functional spaces that blend modern aesthetics with eco-friendly principles. Committed to delivering exceptional results that exceed client expectations.',
-    stats: [
-      { value: '8 Years', label: 'Experience' },
-      { value: '45+', label: 'Projects' },
-      { value: 'Jakarta', label: 'Location' },
-    ],
-    skills: ['AutoCAD', 'SketchUp', '3D Render', 'Site Supervision', 'Project Management', 'Sustainable Design'],
-    reviews: [
-      {
-        name: 'Budi Santoso',
-        time: '2 weeks ago',
-        text: 'Excellent work! Very professional and detail-oriented. Highly recommended for residential projects.',
-        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
-        rating: 5,
-      },
-      {
-        name: 'Sari Wijaya',
-        time: '1 month ago',
-        text: 'Amazing architect! I listened to all my ideas and turned them into reality. The minimalist design is perfect!',
-        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
-        rating: 5,
-      },
-    ],
-    portfolio: [
-      {
-        title: 'Serenity Villa',
-        year: '2025',
-        category: 'Residential',
-        image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=400&q=80',
-      },
-      {
-        title: 'Minimalist Home',
-        year: '2024',
-        category: 'Residential',
-        image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=400&q=80',
-      },
-      {
-        title: 'Urban Sanctuary',
-        year: '2024',
-        category: 'Commercial',
-        image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=400&q=80',
-      },
-      {
-        title: 'Green Haven',
-        year: '2023',
-        category: 'Residential',
-        image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=400&q=80',
-      },
-    ],
-  },
-}
-
-function Stat({ value, label }) {
+function Stat({ icon: Icon, value, label }) {
   return (
     <div className="rounded-[18px] border border-white/70 bg-white px-4 py-5 text-center shadow-[0_8px_18px_rgba(27,47,94,0.05)]">
+      <div className="mx-auto mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#F3F7FA] text-[#1B2F5E]">
+        <Icon className="h-5 w-5" />
+      </div>
       <p className="text-[17px] font-semibold text-[#1A2340]">{value}</p>
       <p className="mt-1 text-[12px] text-[#8A96AA]">{label}</p>
     </div>
@@ -83,36 +26,14 @@ function SkillChip({ children }) {
   )
 }
 
-function ReviewCard({ review }) {
-  return (
-    <Card className="p-4">
-      <div className="flex items-start gap-3">
-        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-white">
-          <img src={review.avatar} alt={review.name} className="h-full w-full object-cover" />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[14px] font-semibold text-[#1A2340]">{review.name}</p>
-              <p className="mt-0.5 text-[12px] text-[#8A96AA]">{review.time}</p>
-            </div>
-            <div className="inline-flex items-center gap-1 text-[12px] font-medium text-[#FBBC05]">
-              <Star className="h-4 w-4 fill-[#FBBC05]" />
-              {review.rating}.0
-            </div>
-          </div>
-          <p className="mt-3 text-[13px] leading-6 text-[#6B7F9B]">{review.text}</p>
-        </div>
-      </div>
-    </Card>
-  )
-}
-
 function ProjectCard({ project }) {
   return (
     <div className="relative h-[180px] overflow-hidden rounded-[20px] bg-slate-800 shadow-lg">
-      <img src={project.image} alt={project.title} className="h-full w-full object-cover" />
+      {project.image ? (
+        <img src={project.image} alt={project.title} className="h-full w-full object-cover" />
+      ) : (
+        <div className="h-full w-full bg-[#D7E3F2]" />
+      )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
       
       <div className="absolute inset-0 flex flex-col justify-between p-4">
@@ -132,16 +53,106 @@ function ProjectCard({ project }) {
 }
 
 function ArchitectProfile() {
-  const { slug } = useParams()
+  const params = useParams()
+  const architectId = params.id || params.slug
   const [activeTab, setActiveTab] = useState('detail')
-  const profile = architectProfiles[slug] ?? architectProfiles['andi-prasetyo']
+  const [profile, setProfile] = useState(null)
+  const [portfolios, setPortfolios] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+
+    setLoading(true)
+    setError('')
+    setProfile(null)
+    setPortfolios([])
+    setActiveTab('detail')
+
+    const loadArchitect = async () => {
+      try {
+        const architect = await getArchitectById(architectId)
+
+        if (!cancelled) {
+          if (!architect) {
+            setError('Data architect tidak ditemukan.')
+            setProfile(null)
+          } else {
+            setProfile(architect)
+          }
+        }
+      } catch (loadError) {
+        console.error(loadError)
+        if (!cancelled) {
+          setError('Gagal mengambil data architect.')
+          setProfile(null)
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    loadArchitect()
+
+    const unsubscribePortfolio = subscribeArchitectPortfolios(
+      architectId,
+      (items) => {
+        if (!cancelled) {
+          setPortfolios(items)
+        }
+      },
+      (portfolioError) => {
+        console.error(portfolioError)
+        if (!cancelled) {
+          setPortfolios([])
+        }
+      }
+    )
+
+    return () => {
+      cancelled = true
+      unsubscribePortfolio()
+    }
+  }, [architectId])
+
+  const specialization = Array.isArray(profile?.specialization) ? profile.specialization : []
+  const skills = Array.isArray(profile?.skills) ? profile.skills : []
+  const portfolio = portfolios.map((item) => ({
+    title: item?.projectName || 'Project',
+    year: item?.projectYear || '-',
+    category: item?.projectType || 'Portfolio',
+    image: item?.projectImages?.[0] ?? null,
+  }))
+
+  const profileName = profile?.fullName || ''
+  const profileLocation = profile?.location || ''
+  const profileAvatar = profile?.profilePhoto || ''
+  const profileTags = specialization
+  const profileAbout = profile?.description || ''
+  const consultationPrice = Number.isFinite(Number(profile?.consultationPrice))
+    ? `Rp${Number(profile.consultationPrice).toLocaleString('id-ID')} / Consultation`
+    : ''
+  const experienceYears = Number.isFinite(Number(profile?.experienceYears)) ? Number(profile.experienceYears) : 0
+  const totalProjectsHandled = Number.isFinite(Number(profile?.totalProjectsHandled)) ? Number(profile.totalProjectsHandled) : 0
+  const profileStats = [
+    { icon: CalendarDays, value: `${experienceYears} Years`, label: 'Experience' },
+    { icon: Briefcase, value: `${totalProjectsHandled} Projects`, label: 'Project Handled' },
+    { icon: MapPin, value: profileLocation, label: 'Location' },
+  ]
 
   return (
     <div className="flex min-h-full flex-col bg-[#F9F6F2]">
       {/* Hero Section */}
       <div className="relative">
         <div className="relative h-80 overflow-hidden rounded-b-[30px] bg-[#D7E3F2]">
-          <img src={profile.heroImage} alt={profile.name} className="h-full w-full object-cover" />
+          {profileAvatar ? (
+            <img src={profileAvatar} alt={profileName} className="h-full w-full object-cover" />
+          ) : (
+            <div className="h-full w-full bg-[#D7E3F2]" />
+          )}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20" />
 
           <Link
@@ -157,33 +168,39 @@ function ArchitectProfile() {
         <div className="px-4">
           <div className="relative -mt-20 mb-4">
             <div className="h-24 w-24 overflow-hidden rounded-full border-4 border-white bg-white shadow-lg">
-              <img src={profile.avatar} alt={profile.name} className="h-full w-full object-cover" />
+              {profileAvatar ? (
+                <img src={profileAvatar} alt={profileName} className="h-full w-full object-cover" />
+              ) : (
+                <div className="h-full w-full bg-[#EAF3FF]" />
+              )}
             </div>
           </div>
 
           {/* Profile Card */}
           <Card className="p-4">
-            <h1 className="font-serif text-[26px] leading-tight text-[#1A2340]">{profile.name}</h1>
+            <h1 className="text-[26px] leading-tight font-semibold text-[#1A2340]">{profileName}</h1>
 
             {/* Tags */}
-            <div className="mt-3 flex flex-wrap gap-2">
-              {profile.tags.map((tag) => (
-                <span key={tag} className="rounded-full bg-[#EAF3FF] px-3 py-1.5 text-[12px] font-medium text-[#4A6C9A]">
-                  {tag}
-                </span>
-              ))}
-            </div>
+            {profileTags.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {profileTags.map((tag) => (
+                  <span key={tag} className="rounded-full bg-[#EAF3FF] px-3 py-1.5 text-[12px] font-medium text-[#4A6C9A]">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            ) : null}
 
             {/* Rating Row */}
             <div className="mt-4 flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <span className="text-[15px] font-semibold text-[#1A2340]">{profile.rating}</span>
+                <span className="text-[15px] font-semibold text-[#1A2340]">4.8</span>
                 <div className="inline-flex gap-0.5">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="h-4 w-4 fill-[#FBBC05] text-[#FBBC05]" />
                   ))}
                 </div>
-                <span className="text-[13px] text-[#7B8FAB]">({profile.reviewCount})</span>
+                <span className="text-[13px] text-[#7B8FAB]">(0 reviews)</span>
               </div>
 
               <div className="inline-flex items-center gap-2 text-[13px] text-[#4A90D9]">
@@ -221,18 +238,28 @@ function ArchitectProfile() {
 
       {/* Content Section */}
       <div className="px-4 py-6 pb-24 space-y-4">
+        {loading ? (
+          <p className="text-[13px] text-[#7B8FAB]">Loading architect profile...</p>
+        ) : null}
+
+        {!loading && error ? (
+          <p className="text-[13px] text-[#C43D3D]">{error}</p>
+        ) : null}
+
+        {!loading && !error && profile ? (
+          <>
         {activeTab === 'detail' ? (
           <>
             {/* About */}
             <section>
               <h2 className="mb-3 text-[16px] font-semibold text-[#1A2340]">About</h2>
-              <p className="text-[14px] leading-7 text-[#7B8FAB]">{profile.about}</p>
+              <p className="text-[14px] leading-7 text-[#7B8FAB]">{profileAbout}</p>
             </section>
 
             {/* Stats */}
             <section className="grid grid-cols-3 gap-3">
-              {profile.stats.map((stat) => (
-                <Stat key={stat.label} value={stat.value} label={stat.label} />
+              {profileStats.map((stat) => (
+                <Stat key={stat.label} icon={stat.icon} value={stat.value} label={stat.label} />
               ))}
             </section>
 
@@ -243,13 +270,11 @@ function ArchitectProfile() {
                 <p className="text-[13px] font-medium text-[#78A36D]">Available This Week</p>
               </Card>
             </section>
-
-            {/* Skills */}
             <section>
               <h2 className="mb-3 text-[16px] font-semibold text-[#1A2340]">Skills & Expertise</h2>
               <Card className="p-4">
                 <div className="flex flex-wrap gap-2">
-                  {profile.skills.map((skill) => (
+                  {skills.map((skill) => (
                     <SkillChip key={skill}>{skill}</SkillChip>
                   ))}
                 </div>
@@ -264,31 +289,33 @@ function ArchitectProfile() {
                   See All <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
-              <div className="space-y-3">
-                {profile.reviews.map((review) => (
-                  <ReviewCard key={review.name} review={review} />
-                ))}
-              </div>
+              <p className="text-[13px] text-[#7B8FAB]">Belum ada review.</p>
             </section>
           </>
         ) : (
           <>
             {/* Portfolio Grid */}
             <section>
-              <div className="grid grid-cols-2 gap-4">
-                {profile.portfolio.map((project) => (
-                  <ProjectCard key={project.title} project={project} />
-                ))}
-              </div>
+              {portfolio.length > 0 ? (
+                <div className="grid grid-cols-2 gap-4">
+                  {portfolio.map((project) => (
+                    <ProjectCard key={`${project.title}-${project.image}`} project={project} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[13px] text-[#7B8FAB]">Belum ada portfolio.</p>
+              )}
             </section>
           </>
         )}
+          </>
+        ) : null}
       </div>
 
       {/* Fixed Bottom Button */}
       <div className="fixed inset-x-0 bottom-6 z-30 px-4">
         <div className="mx-auto max-w-[390px]">
-          <Link to={`/bookings/consultation/${slug}`}>
+          <Link to={`/bookings/consultation/${architectId}`}>
             <Button className="w-full rounded-[20px] py-4 text-[15px]">Book Consultation</Button>
           </Link>
         </div>

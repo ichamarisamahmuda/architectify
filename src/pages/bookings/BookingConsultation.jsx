@@ -1,17 +1,9 @@
-import { ArrowLeft, User, Video, Phone } from 'lucide-react'
+import { ArrowLeft, User, Video } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Card from '../../components/common/Card/Card.jsx'
 import Button from '../../components/common/Button/Button.jsx'
-
-const architectProfiles = {
-  'andi-prasetyo': {
-    name: 'Andi Prasetyo, S.ArS',
-    tags: ['Residential', 'Minimalist'],
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80',
-    consultationPrice: 500000,
-  },
-}
+import { getArchitectById } from '../../services/architectService.js'
 
 const timeSlots = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00']
 
@@ -27,7 +19,44 @@ const dates = [
 export default function BookingConsultation() {
   const navigate = useNavigate()
   const { slug } = useParams()
-  const architect = architectProfiles[slug] || architectProfiles['andi-prasetyo']
+  const [architect, setArchitect] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadArchitect = async () => {
+      setLoading(true)
+      setError('')
+
+      try {
+        const result = await getArchitectById(slug)
+        if (!cancelled) {
+          setArchitect(result)
+          if (!result) {
+            setError('Data architect tidak ditemukan.')
+          }
+        }
+      } catch (loadError) {
+        console.error(loadError)
+        if (!cancelled) {
+          setError('Gagal mengambil data architect.')
+          setArchitect(null)
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    loadArchitect()
+
+    return () => {
+      cancelled = true
+    }
+  }, [slug])
 
   const [selectedDate, setSelectedDate] = useState(10)
   const [selectedTime, setSelectedTime] = useState('10:00')
@@ -58,17 +87,23 @@ export default function BookingConsultation() {
 
       {/* Architect Info */}
       <div className="border-b border-white/70 px-4 py-4 bg-[#F9F6F2]">
-        <div className="flex items-center gap-3">
-          <img
-            src={architect.avatar}
-            alt={architect.name}
-            className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md"
-          />
-          <div>
-            <h2 className="font-semibold text-[15px] text-[#1A2340]">{architect.name}</h2>
-            <p className="text-[12px] text-[#8A96AA]">{architect.tags.join(' • ')}</p>
+        {loading ? (
+          <p className="text-[13px] text-[#7B8FAB]">Loading architect...</p>
+        ) : error ? (
+          <p className="text-[13px] text-[#C43D3D]">{error}</p>
+        ) : architect ? (
+          <div className="flex items-center gap-3">
+            <img
+              src={architect.profilePhoto || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=80'}
+              alt={architect.fullName}
+              className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md"
+            />
+            <div>
+              <h2 className="font-semibold text-[15px] text-[#1A2340]">{architect.fullName}</h2>
+              <p className="text-[12px] text-[#8A96AA]">{Array.isArray(architect.specialization) ? architect.specialization.join(' • ') : ''}</p>
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
 
       {/* Content - Scrollable */}
@@ -196,7 +231,7 @@ export default function BookingConsultation() {
           <div className="flex justify-between items-center">
             <span className="text-[14px] font-medium text-[#8A96AA]">Total Price</span>
             <span className="text-[18px] font-bold text-[#1A2340]">
-              Rp {architect.consultationPrice.toLocaleString('id-ID')}
+              Rp {Number.isFinite(Number(architect?.consultationPrice)) ? Number(architect.consultationPrice).toLocaleString('id-ID') : '0'}
             </span>
           </div>
           

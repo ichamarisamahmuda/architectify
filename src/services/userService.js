@@ -12,10 +12,13 @@ function toUserDocumentData(data) {
     uid: data.uid,
     fullName: data.fullName,
     email: data.email,
+    phoneNumber: data.phoneNumber ?? '',
+    profilePhoto: data.profilePhoto ?? '',
+    location: data.location ?? '',
     role: data.role,
     profileCompleted: Boolean(data.profileCompleted),
-    phoneNumber: data.phoneNumber ?? '',
     createdAt: data.createdAt ?? serverTimestamp(),
+    updatedAt: data.updatedAt ?? serverTimestamp(),
   }
 }
 

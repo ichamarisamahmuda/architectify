@@ -3,6 +3,7 @@ import {
   deleteUser,
   signInWithEmailAndPassword,
   signOut,
+  updateEmail,
 } from 'firebase/auth'
 import { deleteDoc, doc } from 'firebase/firestore'
 import { auth, db } from '../firebase/firebaseConfig.js'
@@ -46,6 +47,8 @@ export async function registerWithEmailAndPassword({ fullName, email, password, 
       role: normalizedRole,
       profileCompleted: false,
       phoneNumber,
+      profilePhoto: '',
+      location: '',
     })
 
     if (normalizedRole === 'Architect') {
@@ -57,6 +60,9 @@ export async function registerWithEmailAndPassword({ fullName, email, password, 
         location: '',
         consultationPrice: '',
         specialization: [],
+        skills: [],
+        experienceYears: 0,
+        totalProjectsHandled: 0,
         portfolio: [],
         description: '',
       })
@@ -109,4 +115,20 @@ export async function logoutUser() {
   }
 
   await signOut(auth)
+}
+
+export async function updateAuthEmail(nextEmail) {
+  assertFirebaseReady()
+
+  const currentUser = auth.currentUser
+  if (!currentUser) {
+    throw new Error('User belum login.')
+  }
+
+  if (!nextEmail || nextEmail === currentUser.email) {
+    return currentUser
+  }
+
+  await updateEmail(currentUser, nextEmail)
+  return currentUser
 }
